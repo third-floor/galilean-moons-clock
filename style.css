@@ -1,9 +1,10 @@
+/* Base UI */
 body {
     margin: 0;
     background: #02040F;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: white;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 #header {
@@ -11,7 +12,7 @@ body {
     padding: 20px;
     display: flex;
     justify-content: space-between;
-    font-size: 20px;
+    font-size: 22px;
     box-sizing: border-box;
 }
 
@@ -24,8 +25,73 @@ body {
     color: white;
 }
 
+/* Modern Jupiter View */
 #jupiterCanvas {
     width: 100vw;
-    height: 60vh;
+    height: 55vh;
     display: block;
+}
+
+/* ------------------------------------------------------------- */
+/* GALILEO NOTEBOOK MODE                                         */
+/* ------------------------------------------------------------- */
+
+#galileo-section {
+    width: 100%;
+    padding: 20px 30px;
+    box-sizing: border-box;
+    margin-top: 10px;
+
+    background: rgba(255, 255, 240, 0.04);
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+#galileo-title {
+    font-family: "Georgia", serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    margin-bottom: 15px;
+    color: #e8e4d6;
+}
+
+/* One row per moon */
+.galileo-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* Labels: serif for old-book feel */
+.galileo-label {
+    width: 100px;
+    font-family: "Georgia", serif;
+    font-size: 18px;
+    color: #e8e4d6;
+}
+
+/* Timeline SVG line */
+.galileo-line {
+    flex-grow: 1;
+    height: 28px;
+    overflow: visible;
+}
+
+/* Dots in Galileo strip */
+.galileo-dot {
+    fill: #fff8d6;
+    opacity: 0.8;
+}
+
+.galileo-dot-current {
+    fill: #ffdd55;
+    opacity: 1.0;
+    stroke: #ffffff;
+    stroke-width: 1.2;
+}
+
+/* Dashed time indicator */
+.galileo-now-line {
+    stroke: #888;
+    stroke-width: 2;
+    stroke-dasharray: 4 3;
 }
