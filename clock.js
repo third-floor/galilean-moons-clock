@@ -1,22 +1,20 @@
 //--------------------------------------------------------------
-// Jupiter Moon Clock — GitHub Pages Version (Style A)
-// Clean, minimal, glow-based rendering, 24h JSON-enabled
+// Galileo Notebook + Modern Jupiter Clock
 //--------------------------------------------------------------
 
-// Canvas setup
 const canvas = document.getElementById("jupiterCanvas");
 const ctx = canvas.getContext("2d");
 
 let W, H;
 function resize() {
     W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight * 0.6;
+    H = canvas.height = window.innerHeight * 0.55;
 }
 resize();
 window.addEventListener("resize", resize);
 
 
-// Color palette from your Colab style
+// Colors
 const moonColors = {
     "Io": "#F6E27F",
     "Europa": "#E8EEF8",
@@ -33,15 +31,11 @@ const J_R = 50;
 const J_GLOW = 140;
 
 
-//--------------------------------------------------------------
-// Drawing helper functions
-//--------------------------------------------------------------
-
-// Soft glow using radial gradient
-function drawGlow(x, y, radius, color) {
-    const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
-    g.addColorStop(0, color + "44");  // inner fade
-    g.addColorStop(1, color + "00");  // transparent outer edge
+// Soft glow
+function glow(x, y, radius, color) {
+    let g = ctx.createRadialGradient(x, y, 0, x, y, radius);
+    g.addColorStop(0, color + "55");
+    g.addColorStop(1, color + "00");
 
     ctx.fillStyle = g;
     ctx.beginPath();
@@ -49,163 +43,164 @@ function drawGlow(x, y, radius, color) {
     ctx.fill();
 }
 
-// Solid circular disc
-function drawDisc(x, y, radius, color) {
+// Solid disk
+function disk(x, y, r, color) {
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
 }
 
 
-// Convert arcseconds → pixel position
+// Convert arcseconds to pixels
 function xToPx(xArcsec, span) {
-    // Moons fit within 85% of the width
     return W/2 + (xArcsec / span) * (W * 0.42);
 }
 
 
 //--------------------------------------------------------------
-// Main drawing function
+// Draw modern Jupiter view
 //--------------------------------------------------------------
-function draw(entry) {
-
-    // Clear canvas
+function drawModern(entry) {
     ctx.clearRect(0, 0, W, H);
 
     const xs = entry.positions;
-
-    //------------------------------------------------------------------
-    // Fix: Compute span correctly (no illegal spread multiplication)
-    //------------------------------------------------------------------
     const maxAbs = Math.max(...Object.values(xs).map(v => Math.abs(v)));
     const span = Math.max(300, maxAbs * 1.4);
 
-    //------------------------------------------------------------------
-    // Draw Jupiter at center bottom
-    //------------------------------------------------------------------
     const jx = xToPx(0, span);
     const jy = H * 0.55;
 
-    drawGlow(jx, jy, J_GLOW, jupiterColor);
-    drawDisc(jx, jy, J_R, jupiterColor);
+    glow(jx, jy, J_GLOW, jupiterColor);
+    disk(jx, jy, J_R, jupiterColor);
 
-    //------------------------------------------------------------------
-    // Draw the moons
-    //------------------------------------------------------------------
-    for (const name of ["Io", "Europa", "Ganymede", "Callisto"]) {
+    for (let name of ["Io","Europa","Ganymede","Callisto"]) {
+        const xarc = xs[name];
+        const x = xToPx(xarc, span);
+        const y = jy;
 
-        const xArc = xs[name];
-        const x = xToPx(xArc, span);
-        const y = H * 0.55;
+        glow(x, y, GLOW_R, moonColors[name]);
+        disk(x, y, MOON_R, moonColors[name]);
 
-        // Glow
-        drawGlow(x, y, GLOW_R, moonColors[name]);
-
-        // Disc
-        drawDisc(x, y, MOON_R, moonColors[name]);
-
-        // Label
         ctx.fillStyle = "white";
         ctx.font = "18px sans-serif";
         ctx.textAlign = "center";
         ctx.fillText(name, x, y - 40);
     }
-
-    //------------------------------------------------------------------
-    // Scale bar (showing ~10% of view span)
-    //------------------------------------------------------------------
-    ctx.strokeStyle = "#777";
-    ctx.lineWidth = 2;
-
-    const barLen = W * 0.15;
-    const barX1 = W/2 - barLen/2;
-    const barX2 = W/2 + barLen/2;
-    const barY = H * 0.9;
-
-    ctx.beginPath();
-    ctx.moveTo(barX1, barY);
-    ctx.lineTo(barX2, barY);
-    ctx.stroke();
-
-    ctx.fillStyle = "#aaa";
-    ctx.font = "16px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(`~${Math.round(span * 0.1)} arcsec`, W/2, barY - 10);
 }
 
 
 //--------------------------------------------------------------
-// JSON Loader + time matching
+// Galileo Notebook Timeline
+//--------------------------------------------------------------
+
+function drawGalileo(entry, dataset) {
+
+    const now = entry.time; // yyyy-mm-dd HH:MM format
+    const minutes = dataset.length; // usually 1440
+
+    const svgRows = {
+        "Io": document.querySelector("#row-Io svg"),
+        "Europa": document.querySelector("#row-Europa svg"),
+        "Ganymede": document.querySelector("#row-Ganymede svg"),
+        "Callisto": document.querySelector("#row-Callisto svg")
+    };
+
+    for (let moon of ["Io","Europa","Ganymede","Callisto"]) {
+
+        const svg = svgRows[moon];
+        svg.innerHTML = ""; // clear old drawing
+
+        // full width of timeline
+        const lineWidth = svg.clientWidth;
+        const lineHeight = svg.clientHeight;
+
+        // Add NOW vertical line
+        const nowX = lineWidth * (dataset.findIndex(e => e.time === now) / minutes);
+
+        const nowLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        nowLine.setAttribute("x1", nowX);
+        nowLine.setAttribute("x2", nowX);
+        nowLine.setAttribute("y1", 0);
+        nowLine.setAttribute("y2", lineHeight);
+        nowLine.setAttribute("class", "galileo-now-line");
+        svg.appendChild(nowLine);
+
+        // Plot moon positions as Galileo-style dots
+        dataset.forEach((row, i) => {
+            const x = (i / minutes) * lineWidth;
+            const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+
+            dot.setAttribute("cx", x);
+            dot.setAttribute("cy", lineHeight / 2);
+
+            if (row.time === now) {
+                dot.setAttribute("r", 6);
+                dot.setAttribute("class", "galileo-dot-current");
+            } else {
+                dot.setAttribute("r", 3.2);
+                dot.setAttribute("class", "galileo-dot");
+            }
+            svg.appendChild(dot);
+        });
+    }
+}
+
+
+//--------------------------------------------------------------
+// Load and sync JSON
 //--------------------------------------------------------------
 
 let ephemeris = null;
 
-async function loadDataset() {
+async function loadJSON() {
     try {
-        const res = await fetch("positions.json?cache=" + Date.now());
-        ephemeris = await res.json();
-    } catch (err) {
-        console.error("Cannot load JSON:", err);
+        let r = await fetch("positions.json?cache=" + Date.now());
+        ephemeris = await r.json();
+    } catch (e) {
+        console.error("JSON load failed:", e);
     }
 }
 
-
-// Find nearest dataset entry to the current local time
-function findCurrentEntry() {
-    if (!ephemeris || !ephemeris.dataset) return null;
+function findEntry() {
+    if (!ephemeris) return null;
 
     const now = new Date();
     const hhmm = now.toISOString().slice(0,16).replace("T"," ");
 
-    // Find exact minute match
-    for (const row of ephemeris.dataset) {
-        if (row.time === hhmm) return row;
-    }
-
-    // Else return closest earlier entry
-    return ephemeris.dataset[0];
+    return ephemeris.dataset.find(e => e.time === hhmm) ||
+           ephemeris.dataset[0];
 }
 
-
-//--------------------------------------------------------------
-// UI Update
-//--------------------------------------------------------------
 function updateUI(entry) {
-    if (!entry) return;
-
-    // Timestamp text
     document.getElementById("timestamp").textContent = entry.time;
 
-    // Events text (multi-line)
     const ev = entry.events;
-    let warnings = [];
-    for (const m of ["Io", "Europa", "Ganymede", "Callisto"]) {
-        if (ev[m]) warnings.push(`${m}: ${ev[m]}`);
+    let msgs = [];
+    for (let m of ["Io","Europa","Ganymede","Callisto"]) {
+        if (ev[m]) msgs.push(`${m}: ${ev[m]}`);
     }
-    document.getElementById("warnings").textContent = warnings.join("\n");
+
+    document.getElementById("warnings").textContent = msgs.join("\n");
 }
 
 
 //--------------------------------------------------------------
-// Main Update Loop (calls draw + loads correct entry)
-//--------------------------------------------------------------
-async function updateClock() {
-    if (!ephemeris) return;
-
-    const entry = findCurrentEntry();
-    if (!entry) return;
-
-    draw(entry);
-    updateUI(entry);
-}
-
-
-//--------------------------------------------------------------
-// Start the clock
+// Main loop
 //--------------------------------------------------------------
 (async function() {
-    await loadDataset();  // load JSON once
-    updateClock();        // draw immediately
-    setInterval(updateClock, 10 * 1000);  // redraw every 10s
+    await loadJSON();
+
+    function update() {
+        if (!ephemeris) return;
+        const entry = findEntry();
+        if (!entry) return;
+
+        drawModern(entry);
+        drawGalileo(entry, ephemeris.dataset);
+        updateUI(entry);
+    }
+
+    update();
+    setInterval(update, 10 * 1000);
 })();
