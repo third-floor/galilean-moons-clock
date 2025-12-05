@@ -96,9 +96,18 @@ function drawModern(entry) {
 
 function drawGalileo(entry, dataset) {
 
-    const now = entry.time; // yyyy-mm-dd HH:MM format
-    const minutes = dataset.length; // usually 1440
+    // Current positions (arcsec)
+    const nowPos = entry.positions;
 
+    // Compute max span across entire dataset
+    const allPos = [];
+    dataset.forEach(row => {
+        Object.values(row.positions).forEach(v => allPos.push(Math.abs(v)));
+    });
+
+    const span = Math.max(300, Math.max(...allPos) * 1.2);
+
+    // Each moon gets one row
     const svgRows = {
         "Io": document.querySelector("#row-Io svg"),
         "Europa": document.querySelector("#row-Europa svg"),
@@ -109,43 +118,52 @@ function drawGalileo(entry, dataset) {
     for (let moon of ["Io","Europa","Ganymede","Callisto"]) {
 
         const svg = svgRows[moon];
-        svg.innerHTML = ""; // clear old drawing
+        svg.innerHTML = "";
 
-        // full width of timeline
-        const lineWidth = svg.clientWidth;
-        const lineHeight = svg.clientHeight;
+        const width = svg.clientWidth;
+        const height = svg.clientHeight;
 
-        // Add NOW vertical line
-        const nowX = lineWidth * (dataset.findIndex(e => e.time === now) / minutes);
+        // Convert arcsec → SVG x coordinate
+        const xMap = arcsec => {
+            // center = 0 arcsec
+            return width/2 + (arcsec / span) * (width * 0.45);
+        };
 
-        const nowLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        nowLine.setAttribute("x1", nowX);
-        nowLine.setAttribute("x2", nowX);
-        nowLine.setAttribute("y1", 0);
-        nowLine.setAttribute("y2", lineHeight);
-        nowLine.setAttribute("class", "galileo-now-line");
-        svg.appendChild(nowLine);
-
-        // Plot moon positions as Galileo-style dots
-        dataset.forEach((row, i) => {
-            const x = (i / minutes) * lineWidth;
+        // --- Draw past 24h positional dots ---
+        dataset.forEach(row => {
+            const px = xMap(row.positions[moon]);
             const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
 
-            dot.setAttribute("cx", x);
-            dot.setAttribute("cy", lineHeight / 2);
+            dot.setAttribute("cx", px);
+            dot.setAttribute("cy", height / 2);
+            dot.setAttribute("r", 3);
+            dot.setAttribute("class", "galileo-dot");
 
-            if (row.time === now) {
-                dot.setAttribute("r", 6);
-                dot.setAttribute("class", "galileo-dot-current");
-            } else {
-                dot.setAttribute("r", 3.2);
-                dot.setAttribute("class", "galileo-dot");
-            }
             svg.appendChild(dot);
         });
+
+        // --- Highlight CURRENT position ---
+        const nowX = xMap(nowPos[moon]);
+        const dotNow = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+
+        dotNow.setAttribute("cx", nowX);
+        dotNow.setAttribute("cy", height / 2);
+        dotNow.setAttribute("r", 6);
+        dotNow.setAttribute("class", "galileo-dot-current");
+
+        svg.appendChild(dotNow);
+
+        // --- Draw a "now" vertical line aligned to arcsec ---
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", nowX);
+        line.setAttribute("x2", nowX);
+        line.setAttribute("y1", 0);
+        line.setAttribute("y2", height);
+        line.setAttribute("class", "galileo-now-line");
+
+        svg.appendChild(line);
     }
 }
-
 
 //--------------------------------------------------------------
 // Load and sync JSON
@@ -204,3 +222,4 @@ function updateUI(entry) {
     update();
     setInterval(update, 10 * 1000);
 })();
+
