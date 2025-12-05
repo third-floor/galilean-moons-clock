@@ -1,19 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jupiter Moon Clock</title>
+    <title>Galileo's Jupiter Clock</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+
+    <!-- Header Section -->
     <div id="header">
         <div id="warnings"></div>
         <div id="timestamp"></div>
     </div>
 
+    <!-- Modern Real-Time Canvas -->
     <canvas id="jupiterCanvas"></canvas>
+
+    <!-- Galileo Notebook Section -->
+    <div id="galileo-section">
+        <div id="galileo-title">GALILEO'S NOTEBOOK (1610 → 2025)</div>
+
+        <div class="galileo-row" id="row-Io">
+            <span class="galileo-label">Io</span>
+            <svg class="galileo-line"></svg>
+        </div>
+
+        <div class="galileo-row" id="row-Europa">
+            <span class="galileo-label">Europa</span>
+            <svg class="galileo-line"></svg>
+        </div>
+
+        <div class="galileo-row" id="row-Ganymede">
+            <span class="galileo-label">Ganymede</span>
+            <svg class="galileo-line"></svg>
+        </div>
+
+        <div class="galileo-row" id="row-Callisto">
+            <span class="galileo-label">Callisto</span>
+            <svg class="galileo-line"></svg>
+        </div>
+    </div>
 
     <script src="clock.js"></script>
 </body>
